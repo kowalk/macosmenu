@@ -58,8 +58,6 @@ class _DockState<T extends IconData> extends State<Dock<T>> {
   int? _hoveredIndex;
   int? _draggingIndex;
   T? _draggingItem;
-  Offset? _dragStartPosition;
-  Offset? _dragEndPosition;
   bool _isDragging = false; // Flag to track dragging state
 
   @override
@@ -119,22 +117,12 @@ class _DockState<T extends IconData> extends State<Dock<T>> {
                     onDragStarted: () {
                       setState(() {
                         _draggingItem = item;
-                        _dragStartPosition = Offset.zero;
                         _isDragging = true; // Set dragging state
                       });
                     },
                     onDragEnd: (details) {
                       setState(() {
-                        if (!details.wasAccepted) {
-                          _dragEndPosition = details.offset;
-                          final closestIndex = _findClosestIndex(details.offset);
-                          if (!_items.contains(_draggingItem)) {
-                            _items.insert(closestIndex, _draggingItem!);
-                          }
-                          _draggingItem = null;
-                        } else {
-                          _draggingItem = null;
-                        }
+                        _draggingItem = null;
                         _isDragging = false; // Reset dragging state
                       });
                     },
@@ -157,23 +145,8 @@ class _DockState<T extends IconData> extends State<Dock<T>> {
                         duration: const Duration(milliseconds: 200),
                         margin: const EdgeInsets.symmetric(horizontal: 4),
                         transform: Matrix4.identity()
-                          ..scale(_hoveredIndex == index && !_isDragging ? 1.2 : 1.0) // Disable hover effect while dragging
-                          ..translate(_draggingIndex == index ? 20.0 : 0.0),
-                        child: _draggingItem == item && _dragEndPosition != null
-                            ? TweenAnimationBuilder<Offset>(
-                                tween: Tween<Offset>(
-                                  begin: _dragEndPosition!,
-                                  end: _dragStartPosition!,
-                                ),
-                                duration: const Duration(milliseconds: 200),
-                                builder: (context, offset, child) {
-                                  return Transform.translate(
-                                    offset: offset,
-                                    child: widget.builder(item),
-                                  );
-                                },
-                              )
-                            : widget.builder(item),
+                          ..scale(_hoveredIndex == index && !_isDragging ? 1.2 : 1.0), // Disable hover effect while dragging
+                        child: widget.builder(item),
                       ),
                     ),
                   ),
@@ -184,19 +157,5 @@ class _DockState<T extends IconData> extends State<Dock<T>> {
         }).toList(),
       ),
     );
-  }
-
-  int _findClosestIndex(Offset dragEndPosition) {
-    double minDistance = double.infinity;
-    int closestIndex = 0;
-    for (int i = 0; i < _items.length; i++) {
-      final itemPosition = Offset(i * 56.0, 0); // Assuming each item has a width of 56
-      final distance = (dragEndPosition - itemPosition).distance;
-      if (distance < minDistance) {
-        minDistance = distance;
-        closestIndex = i;
-      }
-    }
-    return closestIndex;
   }
 }
