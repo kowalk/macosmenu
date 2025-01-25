@@ -60,6 +60,7 @@ class _DockState<T extends IconData> extends State<Dock<T>> {
   T? _draggingItem;
   Offset? _dragStartPosition;
   Offset? _dragEndPosition;
+  bool _isDragging = false; // Flag to track dragging state
 
   @override
   Widget build(BuildContext context) {
@@ -98,6 +99,7 @@ class _DockState<T extends IconData> extends State<Dock<T>> {
                 }
                 _draggingIndex = null;
                 _draggingItem = null;
+                _isDragging = false; // Reset dragging state
               });
             },
             builder: (context, candidateData, rejectedData) {
@@ -118,6 +120,7 @@ class _DockState<T extends IconData> extends State<Dock<T>> {
                       setState(() {
                         _draggingItem = item;
                         _dragStartPosition = Offset.zero;
+                        _isDragging = true; // Set dragging state
                       });
                     },
                     onDragEnd: (details) {
@@ -132,20 +135,29 @@ class _DockState<T extends IconData> extends State<Dock<T>> {
                         } else {
                           _draggingItem = null;
                         }
+                        _isDragging = false; // Reset dragging state
                       });
                     },
                     child: MouseRegion(
-                      onEnter: (_) => setState(() {
-                        _hoveredIndex = index;
-                      }),
-                      onExit: (_) => setState(() {
-                        _hoveredIndex = null;
-                      }),
+                      onEnter: (_) {
+                        if (!_isDragging) { // Disable hover effect while dragging
+                          setState(() {
+                            _hoveredIndex = index;
+                          });
+                        }
+                      },
+                      onExit: (_) {
+                        if (!_isDragging) { // Disable hover effect while dragging
+                          setState(() {
+                            _hoveredIndex = null;
+                          });
+                        }
+                      },
                       child: AnimatedContainer(
                         duration: const Duration(milliseconds: 200),
                         margin: const EdgeInsets.symmetric(horizontal: 4),
                         transform: Matrix4.identity()
-                          ..scale(_hoveredIndex == index ? 1.5 : 1.0)
+                          ..scale(_hoveredIndex == index && !_isDragging ? 1.2 : 1.0) // Disable hover effect while dragging
                           ..translate(_draggingIndex == index ? 20.0 : 0.0),
                         child: _draggingItem == item && _dragEndPosition != null
                             ? TweenAnimationBuilder<Offset>(
